@@ -15,9 +15,7 @@ elliptic-curve = { version = "0.13", features = ["arithmetic", "digest", "sec1"]
 subtle = "2.6.1"
 sha2 = { version = "0.10", optional = true }
 rand = { version = "0.8", features = ["std"], optional = true }
-digest = "0.10"
 zeroize = { version = "1.7", features = ["derive"] }
-thiserror = "1.0"
 group = { version = "0.13", optional = true }
 ff = { version = "0.13", optional = true }
 sec1 = { version = "0.7", features = ["point"], optional = true }
