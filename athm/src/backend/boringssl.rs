@@ -19,7 +19,6 @@
 
 use super::AthmBackend;
 use core::ptr::{null, null_mut, NonNull};
-use rand_core::CryptoRngCore;
 use subtle::{Choice, ConditionallySelectable, ConstantTimeEq, ConstantTimeLess, CtOption};
 use zeroize::Zeroize;
 
@@ -304,8 +303,8 @@ impl BsslScalar {
         BsslScalar(b)
     };
 
-    pub fn random<R: CryptoRngCore>(rng: &mut R) -> Self {
-        random_scalar(rng)
+    pub fn random() -> Self {
+        random_scalar()
     }
 
     pub fn is_zero(&self) -> Choice {
@@ -446,10 +445,10 @@ impl BsslPoint {
 
     // Stub: BsslPoint doesn't have a meaningful `random` in the same sense
     // as ProjectivePoint, but tests call it. Generate generator * random_scalar.
-    pub fn random<R: CryptoRngCore>(rng: &mut R) -> BsslPoint {
+    pub fn random() -> BsslPoint {
         // This approach should only be used for actual random point generation, not for hashing to
         // points.
-        point_generator() * random_scalar(rng)
+        point_generator() * random_scalar()
     }
 }
 
@@ -755,8 +754,8 @@ fn expand_message_xmd_sha256(
     Ok(uniform_bytes)
 }
 
-pub fn random_scalar<R: CryptoRngCore>(_rng: &mut R) -> BsslScalar {
-    // Use BoringSSL's RNG directly (ignores the Rust rng parameter).
+pub fn random_scalar() -> BsslScalar {
+    // Use BoringSSL's built-in CSPRNG.
     let order = p256_order();
     let bn = BnWrapper::new();
     // SAFETY: bn and order are valid pointers.
@@ -766,9 +765,9 @@ pub fn random_scalar<R: CryptoRngCore>(_rng: &mut R) -> BsslScalar {
     // bn freed automatically on drop.
 }
 
-pub fn random_non_zero_scalar<R: CryptoRngCore>(rng: &mut R) -> BsslScalar {
+pub fn random_non_zero_scalar() -> BsslScalar {
     loop {
-        let s = random_scalar(rng);
+        let s = random_scalar();
         if !bool::from(s.is_zero()) {
             return s;
         }
@@ -842,12 +841,12 @@ impl AthmBackend for BoringSslBackend {
         decode_point(input)
     }
 
-    fn random_scalar<R: CryptoRngCore>(rng: &mut R) -> Self::Scalar {
-        random_scalar(rng)
+    fn random_scalar() -> Self::Scalar {
+        random_scalar()
     }
 
-    fn random_non_zero_scalar<R: CryptoRngCore>(rng: &mut R) -> Self::Scalar {
-        random_non_zero_scalar(rng)
+    fn random_non_zero_scalar() -> Self::Scalar {
+        random_non_zero_scalar()
     }
 }
 
@@ -1054,9 +1053,8 @@ mod tests {
 
     #[test]
     fn test_random_scalar() {
-        let mut rng = rand::thread_rng();
-        let s1 = random_scalar(&mut rng);
-        let s2 = random_scalar(&mut rng);
+        let s1 = random_scalar();
+        let s2 = random_scalar();
         assert!(!bool::from(s1.ct_eq(&s2)));
     }
 
