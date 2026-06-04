@@ -6,7 +6,7 @@ edition = "2021"
 [features]
 default = ["rustcrypto"]
 rustcrypto = ["p256", "elliptic-curve", "sha2", "group", "ff", "sec1", "rand"]
-boringssl = ["bssl-sys", "sha2"]
+boringssl = ["bssl-sys"]
 test-vectors = ["hex", "serde", "serde_json"]
 
 [dependencies]

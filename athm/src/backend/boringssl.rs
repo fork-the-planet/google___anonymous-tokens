@@ -703,14 +703,46 @@ pub fn hash_to_scalar(msgs: &[&[u8]], dsts: &[&[u8]]) -> Result<BsslScalar, &'st
     // bn, bn_r, ctx freed automatically on drop.
 }
 
+struct Sha256(bssl_sys::SHA256_CTX);
+
+impl Sha256 {
+    fn new() -> Self {
+        let mut ctx = core::mem::MaybeUninit::<bssl_sys::SHA256_CTX>::uninit();
+        // SAFETY: `SHA256_Init` fully initializes `ctx` and returns 1
+        let r = unsafe { bssl_sys::SHA256_Init(ctx.as_mut_ptr()) };
+        assert_eq!(r, 1);
+        // SAFETY: `SHA256_Init` initialized every field of `ctx`.
+        Self(unsafe { ctx.assume_init() })
+    }
+
+    fn update(&mut self, data: &[u8]) {
+        // SAFETY: `self.0` is a valid initialized SHA256_CTX.
+        // `data` is a valid (possibly empty) slice of `data.len()` bytes.
+        let r = unsafe {
+            bssl_sys::SHA256_Update(
+                &mut self.0,
+                data.as_ptr().cast::<core::ffi::c_void>(),
+                data.len(),
+            )
+        };
+        assert_eq!(r, 1);
+    }
+
+    fn finalize(mut self) -> [u8; 32] {
+        let mut out = [0u8; 32];
+        // SAFETY: `out` has SHA256_DIGEST_LENGTH (=32) bytes and `self.0` is a valid initialized SHA256_CTX.
+        let r = unsafe { bssl_sys::SHA256_Final(out.as_mut_ptr(), &mut self.0) };
+        assert_eq!(r, 1);
+        out
+    }
+}
+
 /// expand_message_xmd using SHA-256, per RFC 9380 §5.3.1.
 fn expand_message_xmd_sha256(
     msg: &[u8],
     dst: &[u8],
     len_in_bytes: usize,
 ) -> Result<Vec<u8>, &'static str> {
-    use sha2::{Digest, Sha256};
-
     let b_in_bytes = 32usize; // SHA-256 output length
     let s_in_bytes = 64usize; // SHA-256 block length
     let ell = (len_in_bytes + b_in_bytes - 1) / b_in_bytes;
