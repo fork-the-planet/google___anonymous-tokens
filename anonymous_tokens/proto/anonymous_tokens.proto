@@ -26,7 +26,7 @@ message Timestamp {
 }
 
 // Different use cases for the Anonymous Tokens service.
-// Next ID: 19
+// Next ID: 20
 enum AnonymousTokensUseCase {
   // Test use cases here.
   ANONYMOUS_TOKENS_USE_CASE_UNDEFINED = 0;
@@ -48,6 +48,7 @@ enum AnonymousTokensUseCase {
   NOCTOGRAM_IRCS_PPISSUER = 15;
   ATHM_IRCS_PPISSUER = 17;
   CHROME_PRIVATE_ARATEA = 18;
+  ATHM_SEARCHGUARD_PPISSUER = 19;
   reserved 13;
 }
 
